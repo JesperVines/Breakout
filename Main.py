@@ -67,7 +67,7 @@ class Ball(pygame.sprite.Sprite):
             self.direction = (360 - self.direction) % 360
             self.x = self.screenwidth - self.width - 1
 
-        elif self.y > 600:
+        elif self.y > 688:
             return True
         else:
             return False
@@ -82,13 +82,13 @@ class Player(pygame.sprite.Sprite):
 
         self.rect = self.image.get_rect()
         self.rect.x = 0
-        self.rect.y = SCREEN_HEIGHT-self.height
+        self.rect.y = SCREEN_HEIGHT - 90
 
     def update(self):
         pos = pygame.mouse.get_pos()
         self.rect.x = pos[0]
-        if self.rect.x > SCREEN_WIDTH - self.width:
-            self.rect.x = SCREEN_WIDTH - self.width
+        if self.rect.x > SCREEN_WIDTH - 90:
+            self.rect.x = SCREEN_WIDTH - 90
 
 
 class Game(object):
@@ -100,19 +100,18 @@ class Game(object):
         self.block_list = pygame.sprite.Group()
         self.all_sprites_list = pygame.sprite.Group()
 
-        top = 80
-        block_count = 17
+        top = 40
         block_height = 30
 
-        for row in range(5):
+        for row in range(4):
 
-            for column in range(0, 17):
+            for column in range(0, 27):
 
-                block = Block(DARK_RED, column * (block_count + 2) + 1, top)
+                block = Block(DARK_RED, column * 50 + 8, top)
                 self.block_list.add(block)
                 self.all_sprites_list.add(block)
 
-            top += block_height + 2
+            top += block_height + 10
 
         self.player = Player()
         self.all_sprites_list.add(self.player)
@@ -142,7 +141,7 @@ class Game(object):
                 self.game_over = True
 
     def display_frame(self, screen):
-        screen.fill(WHITE)
+        screen.fill(BLACK)
 
         if self.game_over:
             font = pygame.font.SysFont("serif", 25)
