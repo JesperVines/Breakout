@@ -1,5 +1,6 @@
 import math
 import pygame
+import random
 
 # GLOBALA KONSTANTER
 
@@ -21,7 +22,7 @@ class Block(pygame.sprite.Sprite):
 
     def __init__(self, color, x, y):
         super().__init__()
-        self.image = pygame.Surface([40, 30])
+        self.image = pygame.Surface([55, 30])
         self.image.fill(color)
         self.rect = self.image.get_rect()
         self.rect.x = x
@@ -31,16 +32,18 @@ class Block(pygame.sprite.Sprite):
 class Ball(pygame.sprite.Sprite):
 
     speed = 10.0
+    width = 10
+    height = 10
 
     x = 0.0
     y = 180.0
 
-    direction = 200
+    direction = 10
 
     def __init__(self):
         super().__init__()
-        self.image = pygame.Surface([10, 10])
-        self.image.fill(WHITE)
+        self.image = pygame.Surface([self.width, self.height])
+        self.image.fill(DARK_GREEN)
         self.rect = self.image.get_rect()
 
     def bounce(self, diff):
@@ -63,32 +66,34 @@ class Ball(pygame.sprite.Sprite):
             self.direction = (360 - self.direction) % 360
             self.x = 1
 
-        elif self.x > self.screenwidth - self.width:
+        elif self.x > SCREEN_WIDTH - self.width:
             self.direction = (360 - self.direction) % 360
-            self.x = self.screenwidth - self.width - 1
+            self.x = SCREEN_WIDTH - self.width - 1
 
-        elif self.y > 688:
+        elif self.y > 768:
             return True
-        else:
-            return False
 
 
 class Player(pygame.sprite.Sprite):
 
+    width = 90
+    height = 20
+
     def __init__(self):
+
         super().__init__()
-        self.image = pygame.Surface([90, 20])
+        self.image = pygame.Surface([self.width, self.height])
         self.image.fill(WHITE)
 
         self.rect = self.image.get_rect()
         self.rect.x = 0
-        self.rect.y = SCREEN_HEIGHT - 90
+        self.rect.y = SCREEN_HEIGHT - 50
 
     def update(self):
         pos = pygame.mouse.get_pos()
         self.rect.x = pos[0]
-        if self.rect.x > SCREEN_WIDTH - 90:
-            self.rect.x = SCREEN_WIDTH - 90
+        if self.rect.x > SCREEN_WIDTH - self.width:
+            self.rect.x = SCREEN_WIDTH - self.width
 
 
 class Game(object):
@@ -98,6 +103,7 @@ class Game(object):
         self.game_over = False
 
         self.block_list = pygame.sprite.Group()
+        self.ball_list = pygame.sprite.Group()
         self.all_sprites_list = pygame.sprite.Group()
 
         top = 40
@@ -105,9 +111,9 @@ class Game(object):
 
         for row in range(4):
 
-            for column in range(0, 27):
+            for column in range(0, 21):
 
-                block = Block(DARK_RED, column * 50 + 8, top)
+                block = Block(DARK_RED, column * 65 + 6, top)
                 self.block_list.add(block)
                 self.all_sprites_list.add(block)
 
@@ -116,36 +122,71 @@ class Game(object):
         self.player = Player()
         self.all_sprites_list.add(self.player)
 
+        self.ball = Ball()
+        self.ball_list.add(self.ball)
+        self.all_sprites_list.add(self.ball)
+
     def process_events(self):
 
         for event in pygame.event.get():
+
             if event.type == pygame.QUIT:
                 return True
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K.ESCAPE:
+                    return True
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if self.game_over:
                     self.__init__()
 
-        return False
+            return False
 
     def run_logic(self):
+
         if not self.game_over:
+
             self.all_sprites_list.update()
 
-            blocks_hit_list = pygame.sprite.spritecollide(self.player, self.block_list, True)
+            if self.ball.y > 768:
+                self.ball_list.remove(self.ball)
+                self.all_sprites_list.remove(self.ball)
 
-            for block in blocks_hit_list:
-                self.score += 1
-                print(self.score)
+                if len(self.ball_list) < 1:
+                    self.game_over = True
 
-            if len(self.block_list) == 0:
-                self.game_over = True
+            bounce_balls = pygame.sprite.spritecollide(self.player, self.ball_list, False)
+
+            if len(bounce_balls) > 0:
+
+                for b in bounce_balls:
+
+                    diff = (self.player.rect.x + self.player.width/2) - (b.rect.x+b.width/2)
+                    b.rect.y = SCREEN_HEIGHT - self.player.width - b.rect.height - 2
+                    b.bounce(diff)
+
+            for ball in self.ball_list:
+
+                dead_blocks = pygame.sprite.spritecollide(ball, self.block_list, True)
+
+                if len(dead_blocks) > 0:
+                    ball.bounce(0)
+
+                    power1 = random.randrange(0, 10)
+                    if power1 == 1:
+                        self.ball = Ball()
+                        self.ball_list.add(self.ball)
+                        self.all_sprites_list.add(self.ball)
+
+                if len(self.block_list) == 0:
+                    self.game_over = True
 
     def display_frame(self, screen):
+
         screen.fill(BLACK)
 
         if self.game_over:
             font = pygame.font.SysFont("serif", 25)
-            text = font.render("Game Over, click to restart", True, BLACK)
+            text = font.render("Game Over, click to restart", True, WHITE)
             center_x = (SCREEN_WIDTH // 2) - (text.get_width() // 2)
             center_y = (SCREEN_HEIGHT // 2) - (text.get_height() // 2)
             screen.blit(text, [center_x, center_y])
@@ -157,10 +198,9 @@ class Game(object):
 
 
 def main():
-    pygame.init()
 
-    size = [SCREEN_WIDTH, SCREEN_HEIGHT]
-    screen = pygame.display.set_mode(size)
+    pygame.init()
+    screen = pygame.display.set_mode((1366, 768), pygame.FULLSCREEN)
 
     pygame.display.set_caption("My Game")
     pygame.mouse.set_visible(False)
